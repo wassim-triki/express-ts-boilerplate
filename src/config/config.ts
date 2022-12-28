@@ -6,7 +6,7 @@ const MONGO_USERNAME = process.env.MONGO_USERNAME || '';
 const MONGO_PASSWORD = process.env.MONGO_PASSWORD || '';
 const MONGO_URI = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster.bouikhn.mongodb.net`;
 
-const PORT = process.env.PORT || 8080;
+const PORT = Number(process.env.PORT) || 8080;
 
 export const config = {
   mongo: {
@@ -14,5 +14,8 @@ export const config = {
   },
   server: {
     port: PORT,
+  },
+  bcrypt: {
+    saltRounds: Number(process.env.BCRYPT_SALT_ROUNDS) || 10,
   },
 };
