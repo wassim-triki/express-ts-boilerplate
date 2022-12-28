@@ -1,8 +1,6 @@
 import express, { Application, Request, Response } from 'express';
-import mongoose from 'mongoose';
 import { connectToDb } from './app';
 import { config } from './config/config';
-import Logger from './library/Logger';
 import userRoutes from './routes/users.routes';
 
 const app: Application = express();
