@@ -1,6 +1,7 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, NextFunction, Request, Response } from 'express';
 import mongoose, { Mongoose } from 'mongoose';
 import { config } from './config/config';
+import { NotFoundError } from './errors';
 import Logger from './library/Logger';
 import { errorMiddleware } from './middlewares/errorMiddleware';
 import userRoutes from './routes/users.routes';
@@ -10,7 +11,6 @@ export const app: Application = express();
 //middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(errorMiddleware);
 
 //DB connection
 const connectToDb = async (): Promise<Mongoose> => {
@@ -25,9 +25,9 @@ const connectToDb = async (): Promise<Mongoose> => {
   }
 };
 connectToDb();
-
 //Routes
 app.use('/api/users', userRoutes);
-app.use('/', (req: Request, res: Response) => {
-  res.send('Hello 🌍!');
-});
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  next(new NotFoundError('Resource not found.'));
+}, errorMiddleware);

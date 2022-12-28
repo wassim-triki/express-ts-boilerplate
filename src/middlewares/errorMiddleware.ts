@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { BadRequestError, HttpError } from '../errors/errors';
-import Logger from '../library/Logger';
+import { HttpError } from '../errors';
 
 export const errorMiddleware = (
   err: HttpError,
@@ -12,8 +11,11 @@ export const errorMiddleware = (
     return next(err);
   }
 
-  res.status(err.statusCode).json({
-    code: err.statusCode,
+  const statusCode = err.statusCode || 500;
+
+  res.status(statusCode).json({
+    code: statusCode,
+    errorType: err.name || 'ERROR',
     message: err.message,
   });
 };
