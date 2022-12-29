@@ -1,4 +1,4 @@
-import { Document, Model, model, Schema, Date } from 'mongoose';
+import { model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import { config } from '../config/config';
 import { IUser } from './IUser';
