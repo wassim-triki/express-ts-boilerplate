@@ -4,7 +4,7 @@ import { BadRequestError } from '../errors/BadRequestError';
 
 import { IUser } from '../models/IUser';
 import { User } from '../models/user.model';
-import { validatePassword, validateUsername } from '../utils/validation';
+import { validateUserInput } from '../utils/validation/validateUserInput';
 
 export const getUsers = async (
   req: Request,
@@ -24,16 +24,11 @@ export const register = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { username, email, password } = req.body;
-
   try {
-    const usernameError: string | null = validateUsername(username);
-    if (usernameError) throw new BadRequestError(usernameError);
-    const passwordError: string | null = validatePassword(password);
-    if (passwordError) throw new BadRequestError(passwordError);
-    const existingUser = await User.findOne({ email });
+    const userData = validateUserInput(req);
+    const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) throw new BadRequestError('User already exists.');
-    const user: IUser = await User.create({ username, email, password });
+    const user: IUser = await User.create(userData);
     res.status(201).json({ user });
   } catch (error: any) {
     next(error);
