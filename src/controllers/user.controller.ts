@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { InternalServerError } from '../errors';
 import { validateLoginInput } from '../utils/validation/validateLoginInput';
 import { validateRegistrationInput } from '../utils/validation/validateRegistrationInput';
+import { config } from '../config/config';
 export const getUsers = async (
   req: Request,
   res: Response,
@@ -49,16 +50,16 @@ export const login = async (
     if (!isValidPassword)
       throw new BadRequestError('Invalid email or password.');
 
-    if (!process.env.JWT_SECRET)
+    if (!config.jwt.secret)
       throw new InternalServerError('JWT_SECRET is not defined.');
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1d',
+    const token = jwt.sign({ id: user._id }, config.jwt.secret, {
+      expiresIn: config.jwt.expiresIn,
     });
     res.cookie('jwt', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
     });
-    res.status(201).send();
+    res.status(201).json({ message: 'Login successful' });
   } catch (error: any) {
     next(error);
   }

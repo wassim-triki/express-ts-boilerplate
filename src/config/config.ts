@@ -12,6 +12,8 @@ const MONGO_URI = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster.bou
 
 const PORT = Number(process.env.PORT) || 8080;
 
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
+
 export const config = {
   mongo: {
     uri: MONGO_URI,
@@ -20,12 +22,16 @@ export const config = {
     port: PORT,
   },
   bcrypt: {
-    saltRounds: Number(process.env.BCRYPT_SALT_ROUNDS) || 10,
+    saltRounds: SALT_ROUNDS,
   },
   validation: {
     password: {
       minLength: 8,
       maxLength: 50,
     },
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN,
   },
 };
