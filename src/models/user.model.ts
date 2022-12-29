@@ -5,7 +5,7 @@ import { IUser } from './IUser';
 
 const userSchema = new Schema(
   {
-    name: {
+    username: {
       type: String,
       required: true,
       trim: true,
@@ -20,7 +20,8 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: true,
-      minlength: 8,
+      minlength: config.validation.password.minLength,
+      maxLength: config.validation.password.maxLength,
     },
   },
   { timestamps: true }

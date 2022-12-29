@@ -22,4 +22,10 @@ export const config = {
   bcrypt: {
     saltRounds: Number(process.env.BCRYPT_SALT_ROUNDS) || 10,
   },
+  validation: {
+    password: {
+      minLength: 8,
+      maxLength: 50,
+    },
+  },
 };

@@ -4,7 +4,7 @@ import { errorMiddleware } from '../middlewares/errorMiddleware';
 
 const router = express.Router();
 
-router.get('/', getUsers, errorMiddleware);
-router.post('/', register, errorMiddleware);
+router.get('/', getUsers);
+router.post('/', register);
 
 export default router;
