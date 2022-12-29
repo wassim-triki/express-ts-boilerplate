@@ -23,13 +23,13 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    throw new Error('dghsdflkjsdflksldf');
-    const existingUser = await User.find({ email: req.body.email });
+    const existingUser = await User.findOne({
+      email: req.body.email,
+    });
     if (existingUser) throw new BadRequestError('User already exists.');
     const user: IUser = await User.create(req.body);
     res.status(201).json({ user });
   } catch (error: any) {
-    // res.status(400).json({ error: error.message });
     next(error);
   }
 };
