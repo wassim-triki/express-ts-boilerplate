@@ -1,8 +1,9 @@
-import { BadRequestError } from '../errors';
+import { BadRequestError, NotFoundError } from '../errors';
 import { IUser } from '../interfaces';
 import { User } from '../models/user.model';
 import bcrypt from 'bcrypt';
 import { Types } from 'mongoose';
+import { IClientUser } from '../interfaces/IClientUser';
 
 export const createUser = async (userData: any): Promise<IUser> => {
   const existingUser = await User.findOne({ email: userData.email });
@@ -13,7 +14,7 @@ export const createUser = async (userData: any): Promise<IUser> => {
 export const getUserByEmailAndPassword = async (
   email: string,
   password: string
-): Promise<IUser> => {
+): Promise<IClientUser> => {
   const user = await User.findOne({ email });
   if (!user) throw new BadRequestError('Invalid email or password.');
   const isValidPassword = await bcrypt.compare(password, user.password);
@@ -22,10 +23,15 @@ export const getUserByEmailAndPassword = async (
   return user;
 };
 
-export const getAllUsers = async (): Promise<IUser[]> => {
-  return User.find().select('-password');
+export const getAllUsers = async (): Promise<IClientUser[]> => {
+  const users = await User.find();
+  return users;
 };
 
-export const getUserById = async (userId: string): Promise<any> => {
-  return User.findOne({ _id: userId });
+export const getUserById = async (
+  userId: string
+): Promise<IClientUser | null> => {
+  const user = await User.findOne({ _id: userId });
+  if (!user) throw new NotFoundError('User not found.');
+  return user;
 };

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { HttpError } from '../errors';
+import Logger from '../lib/Logger';
 
 export const errorMiddleware = (
   err: HttpError,
@@ -12,6 +13,7 @@ export const errorMiddleware = (
   }
 
   const statusCode = err.statusCode || 500;
+  Logger.error(err);
 
   res.status(statusCode).json({
     code: statusCode,

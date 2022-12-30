@@ -28,7 +28,7 @@ const userSchema = new Schema(
 
 const mongooseHidden = require('mongoose-hidden')();
 userSchema.plugin(mongooseHidden, {
-  hidden: { _id: true, password: true, name: false },
+  hidden: { _id: false, password: true, name: false },
 });
 
 userSchema.pre('save', function (next) {

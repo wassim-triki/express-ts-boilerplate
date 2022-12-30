@@ -97,8 +97,10 @@ export const getCurrentUser = async (
 ) => {
   try {
     const { userId } = req;
+    if (!userId) {
+      throw new NotFoundError('No userId found.');
+    }
     const user = await getUserById(userId);
-    if (!user) throw new NotFoundError('User not found.');
     res.status(200).json({ user });
   } catch (error) {
     next(error);
