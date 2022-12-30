@@ -3,14 +3,17 @@ import mongoose, { Mongoose } from 'mongoose';
 import { config } from './config/config';
 import { NotFoundError } from './errors';
 import Logger from './library/Logger';
-import { errorMiddleware } from './middlewares/errorMiddleware';
+import { authentication } from './middlewares/authentication.middleware';
+import { errorMiddleware } from './middlewares/error.middleware';
 import userRoutes from './routes/users.routes';
+import cookieParser from 'cookie-parser';
 
 export const app: Application = express();
 
 //middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 //DB connection
 const connectToDb = async (): Promise<Mongoose> => {

@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { BadRequestError } from '../errors/BadRequestError';
 import bcrypt from 'bcrypt';
-import { IUser } from '../models/IUser';
 import { User } from '../models/user.model';
-import jwt from 'jsonwebtoken';
-import { InternalServerError } from '../errors';
 import { validateLoginInput } from '../utils/validation/validateLoginInput';
 import { validateRegistrationInput } from '../utils/validation/validateRegistrationInput';
 import { config } from '../config/config';
+import { generateToken } from '../utils/jwt';
+import Logger from '../library/Logger';
+import { IUser } from '../interfaces';
 export const getUsers = async (
   req: Request,
   res: Response,
@@ -50,11 +50,11 @@ export const login = async (
     if (!isValidPassword)
       throw new BadRequestError('Invalid email or password.');
 
-    if (!config.jwt.secret)
-      throw new InternalServerError('JWT_SECRET is not defined.');
-    const token = jwt.sign({ id: user._id }, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
-    });
+    const token = generateToken(
+      user._id,
+      config.jwt.secret,
+      config.jwt.expiresIn
+    );
     res.cookie('jwt', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
