@@ -7,6 +7,7 @@ import { authentication } from './middlewares/authentication.middleware';
 import { errorMiddleware } from './middlewares/error.middleware';
 import userRoutes from './routes/users.routes';
 import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
 
 export const app: Application = express();
 
@@ -14,6 +15,7 @@ export const app: Application = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(morgan('tiny'));
 
 //DB connection
 const connectToDb = async (): Promise<Mongoose> => {
