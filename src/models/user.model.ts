@@ -2,7 +2,6 @@ import { model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import { config } from '../config/config';
 import { IUser } from '../interfaces/IUser';
-
 const userSchema = new Schema(
   {
     username: {
@@ -26,6 +25,11 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
+
+const mongooseHidden = require('mongoose-hidden')();
+userSchema.plugin(mongooseHidden, {
+  hidden: { _id: true, password: true, name: false },
+});
 
 userSchema.pre('save', function (next) {
   if (!this.isModified('password')) {

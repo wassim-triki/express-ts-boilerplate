@@ -3,7 +3,7 @@ import { BadRequestError } from '../errors/BadRequestError';
 import { User } from '../models/user.model';
 import { config } from '../config/config';
 import { generateToken } from '../utils/jwt';
-import Logger from '../library/Logger';
+import Logger from '../lib/Logger';
 import { IUser } from '../interfaces';
 import {
   createUser,

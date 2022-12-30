@@ -3,7 +3,7 @@ import { InternalServerError, UnauthorizedError } from '../errors';
 import { config } from '../config/config';
 import { generateToken, validateJWT } from '../utils/jwt';
 import jwt from 'jsonwebtoken';
-import Logger from '../library/Logger';
+import Logger from '../lib/Logger';
 
 export const authentication = (
   req: Request,
