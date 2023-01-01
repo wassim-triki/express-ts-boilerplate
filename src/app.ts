@@ -6,6 +6,7 @@ import Logger from './lib/logger';
 import { authentication } from './middlewares/authentication.middleware';
 import { errorMiddleware } from './middlewares/error.middleware';
 import userRoutes from './routes/users.routes';
+import emailVerificationRoutes from './routes/email-verification.routes';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 
@@ -32,6 +33,7 @@ const connectToDb = async (): Promise<Mongoose> => {
 connectToDb();
 //Routes
 app.use('/api/users', userRoutes);
+app.use('/api/', emailVerificationRoutes);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   next(new NotFoundError('Resource not found.'));

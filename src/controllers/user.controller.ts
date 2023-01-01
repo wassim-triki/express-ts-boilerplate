@@ -2,20 +2,33 @@ import { NextFunction, Request, Response } from 'express';
 import { BadRequestError } from '../errors/BadRequestError';
 import { User } from '../models/user.model';
 import { config } from '../config/config';
-import { generateToken } from '../utils/jwt';
+import { generateAndSetToken, generateToken } from '../utils/jwt';
 import Logger from '../lib/logger';
 import { IUser } from '../interfaces';
 import {
   createUser,
+  deleteAllUsers,
   getAllUsers,
   getUserByEmailAndPassword,
   getUserById,
+  saveEmailVerificationToken,
 } from '../services/user.service';
-import { NotFoundError } from '../errors';
+import {
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../errors';
 import {
   validateLoginInput,
   validateRegistrationInput,
 } from '../utils/validation';
+import { transporter } from '../lib/mailer';
+import { urlJoin } from '../utils/urlJoin';
+import * as fs from 'fs';
+import * as path from 'path';
+import Handlebars from 'handlebars';
+
 export const getUsers = async (
   req: Request,
   res: Response,
@@ -29,6 +42,39 @@ export const getUsers = async (
   }
 };
 
+const sendEmailVerification = async (user: IUser) => {
+  const emailVerificationToken = generateToken(
+    user,
+    config.jwt.emailVerificationSecret,
+    config.jwt.emailVerificationExpiresIn
+  );
+  await saveEmailVerificationToken(user, emailVerificationToken);
+  user.emailVerificationToken = emailVerificationToken;
+
+  const verifyEmailUrl = urlJoin(
+    config.server.baseUrl,
+    '/api/verify-email/',
+    emailVerificationToken
+  );
+  const verifyEmailTemplate = fs.readFileSync(
+    path.resolve(__dirname, '../templates/verify-email.html'),
+    'utf8'
+  );
+  const mailOptions = {
+    from: config.app.email,
+    to: user.email,
+    subject: 'Verify Your Email Address',
+    html: Handlebars.compile(verifyEmailTemplate)({ verifyEmailUrl }),
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      throw error;
+    } else {
+      Logger.info(`Email sent: ${info.response}`);
+    }
+  });
+};
 export const register = async (
   req: Request,
   res: Response,
@@ -37,12 +83,11 @@ export const register = async (
   try {
     const userData = validateRegistrationInput(req);
     const user = await createUser(userData);
-    const token = generateToken(user, config.jwt.secret, config.jwt.expiresIn);
-    res.cookie('accessToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
-    res.status(201).json({ message: 'Registration successful.', user });
+    await sendEmailVerification(user);
+    res
+      .status(201)
+      .json({ message: 'Registration successful, Verify your email.', user });
+    res.end();
   } catch (error: any) {
     next(error);
   }
@@ -56,20 +101,22 @@ export const login = async (
   try {
     const { email, password } = validateLoginInput(req);
     const user = await getUserByEmailAndPassword(email, password);
-    const accessToken = generateToken(user);
-    const refreshToken = generateToken(
+    if (!user.emailVerified) throw new UnauthorizedError('Email not verified.');
+    generateAndSetToken(
+      user,
+      config.jwt.secret,
+      config.jwt.expiresIn,
+      'accessToken',
+      res
+    );
+    generateAndSetToken(
       user,
       config.jwt.refreshTokenSecret,
-      config.jwt.refreshTokenExpiresIn
+      config.jwt.refreshTokenExpiresIn,
+      'refreshToken',
+      res
     );
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
+
     res.status(201).json({ message: 'Login successful.', user });
   } catch (error: any) {
     next(error);
@@ -102,6 +149,19 @@ export const getCurrentUser = async (
     }
     const user = await getUserById(userId);
     res.status(200).json({ user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await deleteAllUsers();
+    res.status(201).json({ message: 'All users deleted.' });
   } catch (error) {
     next(error);
   }

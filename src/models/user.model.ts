@@ -16,6 +16,8 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
     },
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, required: false },
     password: {
       type: String,
       required: true,
@@ -27,9 +29,9 @@ const userSchema = new Schema(
 );
 
 const mongooseHidden = require('mongoose-hidden')();
-userSchema.plugin(mongooseHidden, {
-  hidden: { _id: false, password: true, name: false },
-});
+// userSchema.plugin(mongooseHidden, {
+//   hidden: { _id: false, password: true, name: false },
+// });
 
 userSchema.pre('save', function (next) {
   if (!this.isModified('password')) {

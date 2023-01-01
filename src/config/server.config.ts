@@ -1,3 +1,5 @@
+const port = Number(process.env.PORT) || 8080;
 export const serverConfig = {
-  port: Number(process.env.PORT) || 8080,
+  port,
+  baseUrl: process.env.BASE_URL || `http://localhost:${port}`,
 };

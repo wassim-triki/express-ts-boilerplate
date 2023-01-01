@@ -14,6 +14,9 @@ import { serverConfig } from './server.config';
 import { validationConfig } from './validation.config';
 
 export const config = {
+  app: {
+    email: process.env.APP_EMAIL || 'no-reply@your-app.com',
+  },
   mongo: mongoConfig,
   server: serverConfig,
   bcrypt: bcryptConfig,

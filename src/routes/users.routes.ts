@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import {
+  deleteUsers,
   getCurrentUser,
   getUsers,
   login,
@@ -12,10 +13,12 @@ import { loginLimiter } from '../middlewares/loginLimiter.middleware';
 
 const router = express.Router();
 
-router.get('/', authentication, getUsers);
-router.post('/', authentication, register);
-router.post('/login', loginLimiter, login);
+router.get('/', getUsers);
+router.post('/', register);
+// router.post('/login', loginLimiter, login);
+router.post('/login', login);
 router.post('/logout', authentication, logout);
 router.get('/me', authentication, getCurrentUser);
+router.delete('/', deleteUsers);
 
 export default router;

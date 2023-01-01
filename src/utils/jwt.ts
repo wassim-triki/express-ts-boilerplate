@@ -1,6 +1,8 @@
+import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config';
 import { InternalServerError } from '../errors';
+import { IUser } from '../interfaces';
 
 export const generateToken = (
   payload: any,
@@ -14,10 +16,18 @@ export const generateToken = (
   return token;
 };
 
-export const validateJWT = (
-  token: string,
-  secret: jwt.Secret,
-  callback: any
+export const generateAndSetToken = (
+  payload: any,
+  secret: string,
+  expiresIn: string,
+  cookieName: string,
+  res: Response
 ) => {
-  return jwt.verify(token, secret, callback);
+  const token = jwt.sign({ payload }, secret, {
+    expiresIn: expiresIn,
+  });
+  res.cookie(cookieName, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
 };
