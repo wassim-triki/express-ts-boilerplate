@@ -27,7 +27,7 @@ import { transporter } from '../lib/mailer';
 import { urlJoin } from '../utils/urlJoin';
 import * as fs from 'fs';
 import * as path from 'path';
-import Handlebars from 'handlebars';
+import { sendEmailVerification } from '../utils/sendEmailVerification';
 
 export const getUsers = async (
   req: Request,
@@ -42,39 +42,6 @@ export const getUsers = async (
   }
 };
 
-const sendEmailVerification = async (user: IUser) => {
-  const emailVerificationToken = generateToken(
-    user,
-    config.jwt.emailVerificationSecret,
-    config.jwt.emailVerificationExpiresIn
-  );
-  await saveEmailVerificationToken(user, emailVerificationToken);
-  user.emailVerificationToken = emailVerificationToken;
-
-  const verifyEmailUrl = urlJoin(
-    config.server.baseUrl,
-    '/api/verify-email/',
-    emailVerificationToken
-  );
-  const verifyEmailTemplate = fs.readFileSync(
-    path.resolve(__dirname, '../templates/verify-email.html'),
-    'utf8'
-  );
-  const mailOptions = {
-    from: config.app.email,
-    to: user.email,
-    subject: 'Verify Your Email Address',
-    html: Handlebars.compile(verifyEmailTemplate)({ verifyEmailUrl }),
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      throw error;
-    } else {
-      Logger.info(`Email sent: ${info.response}`);
-    }
-  });
-};
 export const register = async (
   req: Request,
   res: Response,

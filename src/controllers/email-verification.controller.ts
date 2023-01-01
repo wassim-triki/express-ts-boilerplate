@@ -7,6 +7,7 @@ import {
 import { User } from '../models/user.model';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config';
+import { sendEmailVerification } from '../utils/sendEmailVerification';
 export const verifyEmail = async (
   req: Request,
   res: Response,
@@ -22,7 +23,12 @@ export const verifyEmail = async (
       emailVerificationToken,
       config.jwt.emailVerificationSecret,
       (error, decoded) => {
-        if (error) throw new UnauthorizedError('Verification token expired.');
+        if (error) {
+          sendEmailVerification(user);
+          throw new BadRequestError(
+            'Verification token expired, Check your email for a new token.'
+          );
+        }
       }
     );
 
