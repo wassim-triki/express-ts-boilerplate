@@ -2,7 +2,7 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import mongoose, { Mongoose } from 'mongoose';
 import { config } from './config/config';
 import { NotFoundError } from './errors';
-import Logger from './lib/Logger';
+import Logger from './lib/logger';
 import { authentication } from './middlewares/authentication.middleware';
 import { errorMiddleware } from './middlewares/error.middleware';
 import userRoutes from './routes/users.routes';

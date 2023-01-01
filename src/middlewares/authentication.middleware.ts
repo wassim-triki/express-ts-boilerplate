@@ -3,7 +3,7 @@ import { InternalServerError, UnauthorizedError } from '../errors';
 import { config } from '../config/config';
 import { generateToken, validateJWT } from '../utils/jwt';
 import jwt from 'jsonwebtoken';
-import Logger from '../lib/Logger';
+import Logger from '../lib/logger';
 
 const checkAccessToken = (req: Request, res: Response, next: NextFunction) => {
   const accessToken = req.cookies.accessToken;

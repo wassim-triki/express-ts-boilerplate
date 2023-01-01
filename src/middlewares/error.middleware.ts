@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { HttpError } from '../errors';
-import Logger from '../lib/Logger';
+import Logger from '../lib/logger';
 
 export const errorMiddleware = (
   err: HttpError,

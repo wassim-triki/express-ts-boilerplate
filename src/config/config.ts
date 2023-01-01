@@ -6,35 +6,18 @@ if (process.env.NODE_ENV === 'development') {
   dotenv.config({ path: '.env.production' });
 }
 
-const MONGO_USERNAME = process.env.MONGO_USERNAME || '';
-const MONGO_PASSWORD = process.env.MONGO_PASSWORD || '';
-const MONGO_URI = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster.bouikhn.mongodb.net`;
-
-const PORT = Number(process.env.PORT) || 8080;
-
-const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
+import { bcryptConfig } from './bcrypt.config';
+import { jwtConfig } from './jwt.config';
+import { mongoConfig } from './mongo.config';
+import { nodemailerConfig } from './nodemailer.config';
+import { serverConfig } from './server.config';
+import { validationConfig } from './validation.config';
 
 export const config = {
-  mongo: {
-    uri: MONGO_URI,
-  },
-  server: {
-    port: PORT,
-  },
-  bcrypt: {
-    saltRounds: SALT_ROUNDS,
-  },
-  validation: {
-    password: {
-      minLength: 8,
-      maxLength: 50,
-    },
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET || 'secret',
-    expiresIn: process.env.JWT_EXPIRES_IN,
-    refreshTokenSecret:
-      process.env.JWT_REFRESH_TOKEN_SECRET || 'refresh-token-secret',
-    refreshTokenExpiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN,
-  },
+  mongo: mongoConfig,
+  server: serverConfig,
+  bcrypt: bcryptConfig,
+  validation: validationConfig,
+  jwt: jwtConfig,
+  nodemailer: nodemailerConfig,
 };
