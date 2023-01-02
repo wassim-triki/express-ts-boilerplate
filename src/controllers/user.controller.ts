@@ -2,9 +2,14 @@ import { NextFunction, Request, Response } from 'express';
 import { BadRequestError } from '../errors/BadRequestError';
 import { User } from '../models/user.model';
 import { config } from '../config/config';
-import { generateAndSetToken, generateToken } from '../utils/jwt';
+import {
+  generateAndSetToken,
+  generateToken,
+  handleJWTEmailVerification,
+} from '../utils/jwt';
 import Logger from '../lib/logger';
 import { IUser } from '../interfaces';
+import Handlebars from 'handlebars';
 import {
   createUser,
   deleteAllUsers,
@@ -28,12 +33,11 @@ import { urlJoin } from '../utils/urlJoin';
 import * as fs from 'fs';
 import * as path from 'path';
 import { sendEmailVerification } from '../utils/sendEmailVerification';
+import jwt from 'jsonwebtoken';
+import { sendEmail } from '../utils/sendEmail';
+import { compileEmailTemplate } from '../lib/emailTemplates';
 
-export const getUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const users = await getAllUsers();
     return res.status(200).json({ users });
@@ -42,11 +46,7 @@ export const getUsers = async (
   }
 };
 
-export const register = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userData = validateRegistrationInput(req);
     const user = await createUser(userData);
@@ -60,11 +60,7 @@ export const register = async (
   }
 };
 
-export const login = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = validateLoginInput(req);
     const user = await getUserByEmailAndPassword(email, password);
@@ -90,11 +86,7 @@ export const login = async (
   }
 };
 
-export const logout = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
@@ -104,7 +96,7 @@ export const logout = async (
   }
 };
 
-export const getCurrentUser = async (
+const getLoggedinUser = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -121,11 +113,7 @@ export const getCurrentUser = async (
   }
 };
 
-export const deleteUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const deleteUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await deleteAllUsers();
     res.status(201).json({ message: 'All users deleted.' });
@@ -133,3 +121,78 @@ export const deleteUsers = async (
     next(error);
   }
 };
+
+const handleResetPasswordRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) throw new UnauthorizedError('Email address not found.');
+    if (!user.emailVerified) {
+      sendEmailVerification(user);
+      throw new BadRequestError(
+        'Email address not verified. Check your email for a verification link.'
+      );
+    }
+
+    const resetToken = generateToken(
+      user,
+      config.jwt.passwordResetSecret,
+      config.jwt.passwordResetExpiresIn
+    );
+    const resetPasswordUrl = '';
+    const passwordResetTemplate = compileEmailTemplate(
+      '../templates/password-reset.html',
+      { username: user.username, resetPasswordUrl, resetToken }
+    );
+
+    sendEmail(user.email, 'Reset Your Password.', passwordResetTemplate);
+    res.status(200).json({ message: 'Password reset email sent.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { emailVerificationToken } = req.params;
+    const user = await User.findOne({ emailVerificationToken });
+    if (!user)
+      throw new InternalServerError('Could not find user with provided token.');
+    if (user.emailVerified)
+      res.status(200).json({ message: 'Email already verified.' });
+    jwt.verify(
+      emailVerificationToken,
+      config.jwt.emailVerificationSecret,
+      (err, decoded) => handleJWTEmailVerification(err, decoded, user)
+    );
+    user.emailVerified = true;
+    user.emailVerificationToken = '';
+    await user.save();
+    res
+      .status(201)
+      .json({ message: 'Verification complete, You may now login.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const auth = {
+  register,
+  login,
+  logout,
+  verifyEmail,
+  getLoggedinUser,
+};
+const passwordReset = {
+  request: handleResetPasswordRequest,
+};
+const admin = {
+  getUsers,
+  deleteUsers,
+};
+
+export { auth, passwordReset, admin };

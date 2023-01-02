@@ -8,6 +8,8 @@ import { transporter } from '../lib/mailer';
 import Logger from '../lib/logger';
 import { IUser } from '../interfaces';
 import Handlebars from 'handlebars';
+import { sendEmail } from './sendEmail';
+import { compileEmailTemplate } from '../lib/emailTemplates';
 
 export const sendEmailVerification = async (user: IUser) => {
   const emailVerificationToken = generateToken(
@@ -20,25 +22,13 @@ export const sendEmailVerification = async (user: IUser) => {
 
   const verifyEmailUrl = urlJoin(
     config.server.baseUrl,
-    '/api/verify-email/',
+    '/api/users/verify-email/',
     emailVerificationToken
   );
-  const verifyEmailTemplate = fs.readFileSync(
-    path.resolve(__dirname, '../templates/verify-email.html'),
-    'utf8'
+  const verifyEmailTemplate = compileEmailTemplate(
+    '../templates/verify-email.html',
+    { verifyEmailUrl }
   );
-  const mailOptions = {
-    from: config.app.email,
-    to: user.email,
-    subject: 'Verify Your Email Address',
-    html: Handlebars.compile(verifyEmailTemplate)({ verifyEmailUrl }),
-  };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      throw error;
-    } else {
-      Logger.info(`Email sent: ${info.response}`);
-    }
-  });
+  sendEmail(user.email, 'Verify Your Email Address', verifyEmailTemplate);
 };

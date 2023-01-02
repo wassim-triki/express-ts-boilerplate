@@ -8,4 +8,7 @@ export const jwtConfig = {
     process.env.JWT_EMAIL_VERIFICATION_SECRET || 'email-verification-secret',
   emailVerificationExpiresIn:
     process.env.JWT_EMAIL_VERIFICATION_EXPIRES_IN || '1d',
+  passwordResetSecret:
+    process.env.JWT_PASSWORD_RESET_SECRET || 'email-verification-secret',
+  passwordResetExpiresIn: process.env.JWT_PASSWORD_RESET_EXPIRES_IN || '1d',
 };
