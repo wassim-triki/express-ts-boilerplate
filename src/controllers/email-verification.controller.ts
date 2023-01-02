@@ -16,22 +16,20 @@ export const verifyEmail = async (
   try {
     const { emailVerificationToken } = req.params;
     const user = await User.findOne({ emailVerificationToken });
-    if (!user) throw new InternalServerError('Could not verify email.');
+    if (!user)
+      throw new InternalServerError('Could not find user with provided token.');
     if (user.emailVerified)
       res.status(200).json({ message: 'Email already verified.' });
-    jwt.verify(
+    const isValidToken = jwt.verify(
       emailVerificationToken,
-      config.jwt.emailVerificationSecret,
-      (error, decoded) => {
-        if (error) {
-          sendEmailVerification(user);
-          throw new BadRequestError(
-            'Verification token expired, Check your email for a new token.'
-          );
-        }
-      }
+      config.jwt.emailVerificationSecret
     );
-
+    if (!isValidToken) {
+      sendEmailVerification(user);
+      throw new BadRequestError(
+        'Verification token expired, Check your email for a new token.'
+      );
+    }
     user.emailVerified = true;
     user.emailVerificationToken = '';
     await user.save();
