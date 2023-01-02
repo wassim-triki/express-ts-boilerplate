@@ -1,4 +1,9 @@
-import { BadRequestError, InternalServerError, NotFoundError } from '../errors';
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../errors';
 import { IUser } from '../interfaces';
 import { User } from '../models/user.model';
 import bcrypt from 'bcrypt';
@@ -49,4 +54,11 @@ export const saveEmailVerificationToken = async (
 
 export const deleteAllUsers = async () => {
   await User.deleteMany();
+};
+
+export const updatePassword = async (userId: string, password: string) => {
+  const user = await User.findOne({ _id: userId });
+  if (!user) throw new UnauthorizedError('Email address not found.');
+  user.password = password;
+  await user.save();
 };

@@ -1,7 +1,11 @@
 import { Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/config';
-import { BadRequestError, InternalServerError } from '../errors';
+import {
+  BadRequestError,
+  InternalServerError,
+  UnauthorizedError,
+} from '../errors';
 import { IUser } from '../interfaces';
 import { sendEmailVerification } from './sendEmailVerification';
 
@@ -44,4 +48,22 @@ export const handleJWTEmailVerification = (
       'Verification token expired, Check your email for a new token.'
     );
   }
+};
+
+export const verifyJWT = (
+  token: string,
+  tokenName:
+    | 'Access Token'
+    | 'Refresh Token'
+    | 'Verification Token'
+    | 'Password Reset Token'
+) => {
+  if (!token) throw new UnauthorizedError(`${tokenName} not found.`);
+  let payload: any;
+  jwt.verify(token, config.jwt.passwordResetSecret, (err, decoded) => {
+    if (err) throw new UnauthorizedError(`${tokenName} invalid.`);
+    payload = (decoded as JwtPayload).payload;
+  });
+  if (!payload) throw new UnauthorizedError(`${tokenName} invalid.`);
+  return payload;
 };

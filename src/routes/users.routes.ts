@@ -14,5 +14,6 @@ router.post('/logout', authentication, auth.logout);
 router.get('/me', authentication, auth.getLoggedinUser);
 router.delete('/', admin.deleteUsers);
 router.post('/reset-password', passwordReset.request);
+router.put('/reset-password', passwordReset.reset);
 
 export default router;

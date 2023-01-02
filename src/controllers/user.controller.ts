@@ -6,6 +6,7 @@ import {
   generateAndSetToken,
   generateToken,
   handleJWTEmailVerification,
+  verifyJWT,
 } from '../utils/jwt';
 import Logger from '../lib/logger';
 import { IUser } from '../interfaces';
@@ -17,6 +18,7 @@ import {
   getUserByEmailAndPassword,
   getUserById,
   saveEmailVerificationToken,
+  updatePassword,
 } from '../services/user.service';
 import {
   ForbiddenError,
@@ -33,7 +35,7 @@ import { urlJoin } from '../utils/urlJoin';
 import * as fs from 'fs';
 import * as path from 'path';
 import { sendEmailVerification } from '../utils/sendEmailVerification';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { sendEmail } from '../utils/sendEmail';
 import { compileEmailTemplate } from '../lib/emailTemplates';
 
@@ -122,40 +124,6 @@ const deleteUsers = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const handleResetPasswordRequest = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email: email });
-    if (!user) throw new UnauthorizedError('Email address not found.');
-    if (!user.emailVerified) {
-      sendEmailVerification(user);
-      throw new BadRequestError(
-        'Email address not verified. Check your email for a verification link.'
-      );
-    }
-
-    const resetToken = generateToken(
-      user,
-      config.jwt.passwordResetSecret,
-      config.jwt.passwordResetExpiresIn
-    );
-    const resetPasswordUrl = '';
-    const passwordResetTemplate = compileEmailTemplate(
-      '../templates/password-reset.html',
-      { username: user.username, resetPasswordUrl, resetToken }
-    );
-
-    sendEmail(user.email, 'Reset Your Password.', passwordResetTemplate);
-    res.status(200).json({ message: 'Password reset email sent.' });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { emailVerificationToken } = req.params;
@@ -180,6 +148,61 @@ const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const requestPasswordRest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) throw new UnauthorizedError('Email address not found.');
+    if (!user.emailVerified) {
+      sendEmailVerification(user);
+      throw new BadRequestError(
+        'Email address not verified. Check your email for a verification link.'
+      );
+    }
+
+    const resetToken = generateToken(
+      user,
+      config.jwt.passwordResetSecret,
+      config.jwt.passwordResetExpiresIn
+    );
+    console.log(resetToken);
+    const resetPasswordFormUrl = resetToken;
+    const passwordResetTemplate = compileEmailTemplate(
+      '../templates/password-reset.html',
+      { username: user.username, resetPasswordFormUrl }
+    );
+
+    sendEmail(user.email, 'Reset Your Password.', passwordResetTemplate);
+    res.status(200).json({ message: 'Password reset email sent.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const resetToken = req.query.resetToken as string;
+    const user = verifyJWT(resetToken, 'Password Reset Token');
+    await updatePassword(user._id, req.body.password);
+    sendEmail(
+      user.email,
+      'Your Password is Reset.',
+      'password reset avec success'
+    );
+    res.status(200).json({ message: 'Your Password is Reset.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const auth = {
   register,
   login,
@@ -188,7 +211,8 @@ const auth = {
   getLoggedinUser,
 };
 const passwordReset = {
-  request: handleResetPasswordRequest,
+  request: requestPasswordRest,
+  reset: resetPassword,
 };
 const admin = {
   getUsers,

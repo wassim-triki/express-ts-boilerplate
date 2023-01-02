@@ -25,6 +25,7 @@ export const sendEmailVerification = async (user: IUser) => {
     '/api/users/verify-email/',
     emailVerificationToken
   );
+  console.log(verifyEmailUrl);
   const verifyEmailTemplate = compileEmailTemplate(
     '../templates/verify-email.html',
     { verifyEmailUrl }
