@@ -8,6 +8,21 @@ import { User } from '../models/user.model';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config';
 import { sendEmailVerification } from '../utils/sendEmailVerification';
+import { IUser } from '../interfaces';
+
+const handleJWTEmailVerification = (
+  err: any,
+  decoded: any,
+  user: IUser
+): void => {
+  if (err) {
+    sendEmailVerification(user);
+    throw new BadRequestError(
+      'Verification token expired, Check your email for a new token.'
+    );
+  }
+};
+
 export const verifyEmail = async (
   req: Request,
   res: Response,
@@ -20,16 +35,12 @@ export const verifyEmail = async (
       throw new InternalServerError('Could not find user with provided token.');
     if (user.emailVerified)
       res.status(200).json({ message: 'Email already verified.' });
-    const isValidToken = jwt.verify(
+    jwt.verify(
       emailVerificationToken,
-      config.jwt.emailVerificationSecret
+      config.jwt.emailVerificationSecret,
+      (err, decoded) => handleJWTEmailVerification(err, decoded, user)
     );
-    if (!isValidToken) {
-      sendEmailVerification(user);
-      throw new BadRequestError(
-        'Verification token expired, Check your email for a new token.'
-      );
-    }
+
     user.emailVerified = true;
     user.emailVerificationToken = '';
     await user.save();
