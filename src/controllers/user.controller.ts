@@ -2,47 +2,30 @@ import { NextFunction, Request, Response } from 'express';
 import { BadRequestError } from '../errors/BadRequestError';
 import { User } from '../models/user.model';
 import { config } from '../config/config';
-import {
-  generateAndSetToken,
-  generateToken,
-  handleJWTEmailVerification,
-  verifyJWT,
-} from '../utils/jwt';
-import Logger from '../lib/logger';
-import { IUser } from '../interfaces';
-import Handlebars from 'handlebars';
+import { generateAndSetToken, generateToken, verifyJWT } from '../utils/jwt';
 import {
   createUser,
   deleteAllUsers,
   getAllUsers,
   getUserByEmailAndPassword,
   getUserById,
-  saveEmailVerificationToken,
   updatePassword,
+  verifyUserEmail,
 } from '../services/user.service';
-import {
-  ForbiddenError,
-  InternalServerError,
-  NotFoundError,
-  UnauthorizedError,
-} from '../errors';
+import { NotFoundError, UnauthorizedError } from '../errors';
 import {
   validateLoginInput,
   validateRegistrationInput,
 } from '../utils/validation';
-import { transporter } from '../lib/mailer';
-import { urlJoin } from '../utils/urlJoin';
-import * as fs from 'fs';
-import * as path from 'path';
 import { sendEmailVerification } from '../utils/sendEmailVerification';
-import jwt, { JwtPayload } from 'jsonwebtoken';
 import { sendEmail } from '../utils/sendEmail';
 import { compileEmailTemplate } from '../lib/emailTemplates';
 
 const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const users = await getAllUsers();
-    return res.status(200).json({ users });
+    res.set('X-Total-Count', '10');
+    return res.status(200).json({ data: users, total: users.length });
   } catch (error) {
     next(error);
   }
@@ -127,19 +110,12 @@ const deleteUsers = async (req: Request, res: Response, next: NextFunction) => {
 const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { emailVerificationToken } = req.params;
-    const user = await User.findOne({ emailVerificationToken });
-    if (!user)
-      throw new InternalServerError('Could not find user with provided token.');
-    if (user.emailVerified)
-      res.status(200).json({ message: 'Email already verified.' });
-    jwt.verify(
+    verifyJWT(
       emailVerificationToken,
       config.jwt.emailVerificationSecret,
-      (err, decoded) => handleJWTEmailVerification(err, decoded, user)
+      'Verification Token'
     );
-    user.emailVerified = true;
-    user.emailVerificationToken = '';
-    await user.save();
+    await verifyUserEmail(emailVerificationToken);
     res
       .status(201)
       .json({ message: 'Verification complete, You may now login.' });
@@ -190,7 +166,11 @@ const resetPassword = async (
 ) => {
   try {
     const resetToken = req.query.resetToken as string;
-    const user = verifyJWT(resetToken, 'Password Reset Token');
+    const user = verifyJWT(
+      resetToken,
+      config.jwt.passwordResetSecret,
+      'Password Reset Token'
+    );
     await updatePassword(user._id, req.body.password);
     sendEmail(
       user.email,

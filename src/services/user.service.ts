@@ -9,10 +9,19 @@ import { User } from '../models/user.model';
 import bcrypt from 'bcrypt';
 import { Types } from 'mongoose';
 import { IClientUser } from '../interfaces/IClientUser';
+import { sendEmailVerification } from '../utils/sendEmailVerification';
 
 export const createUser = async (userData: any): Promise<IUser> => {
   const existingUser = await User.findOne({ email: userData.email });
-  if (existingUser) throw new BadRequestError('User already exists.');
+  if (existingUser) {
+    if (!existingUser.emailVerified) {
+      sendEmailVerification(existingUser);
+      throw new BadRequestError(
+        'User already registered, Please verify your email.'
+      );
+    }
+    throw new BadRequestError('User already exists.');
+  }
   return await User.create(userData);
 };
 
@@ -54,6 +63,19 @@ export const saveEmailVerificationToken = async (
 
 export const deleteAllUsers = async () => {
   await User.deleteMany();
+};
+
+export const verifyUserEmail = async (emailVerificationToken: string) => {
+  const user = await User.findOne({ emailVerificationToken });
+
+  if (!user)
+    throw new InternalServerError('Could not find user with provided token.');
+
+  if (user.emailVerified) throw new BadRequestError('Email already verified.');
+
+  user.emailVerified = true;
+  user.emailVerificationToken = '';
+  await user.save();
 };
 
 export const updatePassword = async (userId: string, password: string) => {

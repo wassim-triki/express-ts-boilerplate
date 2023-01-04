@@ -8,6 +8,7 @@ import { errorMiddleware } from './middlewares/error.middleware';
 import userRoutes from './routes/users.routes';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import cors from 'cors';
 
 export const app: Application = express();
 
@@ -16,7 +17,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('tiny'));
-
+app.use(cors());
+app.use((req, res, next) => {
+  res.header('Access-Control-Expose-Headers', 'X-Total-Count');
+  next();
+});
 //DB connection
 const connectToDb = async (): Promise<Mongoose> => {
   try {

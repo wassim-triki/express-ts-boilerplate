@@ -52,6 +52,7 @@ export const handleJWTEmailVerification = (
 
 export const verifyJWT = (
   token: string,
+  secret: string,
   tokenName:
     | 'Access Token'
     | 'Refresh Token'
@@ -60,7 +61,7 @@ export const verifyJWT = (
 ) => {
   if (!token) throw new UnauthorizedError(`${tokenName} not found.`);
   let payload: any;
-  jwt.verify(token, config.jwt.passwordResetSecret, (err, decoded) => {
+  jwt.verify(token, secret, (err, decoded) => {
     if (err) throw new UnauthorizedError(`${tokenName} invalid.`);
     payload = (decoded as JwtPayload).payload;
   });
